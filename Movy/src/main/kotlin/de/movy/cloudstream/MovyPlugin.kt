@@ -7,6 +7,6 @@ import com.lagradost.cloudstream3.plugins.Plugin
 @CloudstreamPlugin
 class MovyPlugin : Plugin() {
     override fun load(context: Context) {
-        registerMainAPI(MovyProvider())
+        registerMainAPI(MovyProvider(MovyPlayback(context.applicationContext)))
     }
 }

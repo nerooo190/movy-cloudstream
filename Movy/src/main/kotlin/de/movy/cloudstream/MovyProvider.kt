@@ -26,7 +26,6 @@ import com.lagradost.cloudstream3.newMovieSearchResponse
 import com.lagradost.cloudstream3.newSubtitleFile
 import com.lagradost.cloudstream3.newTvSeriesLoadResponse
 import com.lagradost.cloudstream3.newTvSeriesSearchResponse
-import com.lagradost.cloudstream3.network.WebViewResolver
 import com.lagradost.cloudstream3.utils.AppUtils.tryParseJson
 import com.lagradost.cloudstream3.utils.ExtractorLink
 import com.lagradost.cloudstream3.utils.ExtractorLinkType
@@ -36,10 +35,9 @@ import kotlinx.coroutines.async
 import kotlinx.coroutines.awaitAll
 import kotlinx.coroutines.coroutineScope
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
-import okhttp3.Request
 import java.io.IOException
 
-class MovyProvider : MainAPI() {
+class MovyProvider internal constructor(private val playback: MovyPlayback) : MainAPI() {
     override var mainUrl = "https://www.movy.sx"
     override var name = "Movy"
     override var lang = "de"
@@ -118,17 +116,10 @@ class MovyProvider : MainAPI() {
         callback: (ExtractorLink) -> Unit,
     ): Boolean {
         val route = mediaRoute(data) ?: return false
-        val playerUrl = "$mainUrl/de" + route.value + "?play=true"
-        // Let Movy's player choose a source, then pass its media request to Cloudstream.
-        val resolver = WebViewResolver(
-            interceptUrl = manifestUrl,
-            additionalUrls = listOf(subtitleUrl),
-            userAgent = null,
-            useOkhttp = false,
-            timeout = 25_000L,
-        )
-        val (stream, subtitles) = resolver.resolveUsingWebView(url = playerUrl, referer = "$mainUrl/de")
-        if (stream == null) return false
+        val path = route.value
+        val (stream, subtitles) = playback.resolve("$mainUrl/de$path?play=true")
+            ?: playback.resolve("https://www.vidy.st$path?autoplay=true")
+            ?: return false
 
         val fileName = stream.url.pathSegments.last()
         val streamType = if (fileName.endsWith(".mpd", ignoreCase = true)) {
@@ -137,16 +128,16 @@ class MovyProvider : MainAPI() {
             ExtractorLinkType.M3U8
         }
         callback(newExtractorLink(name, name, stream.url.toString(), streamType) {
-            referer = stream.header("Referer") ?: "$mainUrl/"
-            headers = playbackHeaders(stream)
+            referer = stream.headers.getValue("Referer")
+            headers = stream.headers - "Referer"
             quality = qualityInFileName.find(fileName)?.groupValues?.get(1)?.toIntOrNull()
                 ?: Qualities.Unknown.value
         })
 
-        subtitles.distinctBy { it.url }.forEach { subtitle ->
+        subtitles.forEach { subtitle ->
             val language = subtitle.url.pathSegments.last().substringBeforeLast('.')
             subtitleCallback(newSubtitleFile(language, subtitle.url.toString()) {
-                headers = playbackHeaders(subtitle) + ("Referer" to (subtitle.header("Referer") ?: "$mainUrl/"))
+                headers = subtitle.headers
             })
         }
         return true
@@ -239,11 +230,6 @@ class MovyProvider : MainAPI() {
 
     private fun tmdbImage(path: String?): String? = path?.let { "https://image.tmdb.org/t/p/w500$it" }
 
-    private fun playbackHeaders(request: Request): Map<String, String> =
-        listOf("Origin", "User-Agent").mapNotNull { key ->
-            request.header(key)?.let { key to it }
-        }.toMap()
-
     private fun JsonNode.text(key: String): String? =
         path(key).asText(null)?.takeIf(String::isNotBlank)
 
@@ -252,8 +238,6 @@ class MovyProvider : MainAPI() {
 
     private companion object {
         val titlePath = Regex("""/(movie|tv)/([1-9]\d*)(?:/\d+/[1-9]\d*)?""")
-        val manifestUrl = Regex("""^https://[^?#]+\.(?:m3u8|mpd)(?:[?#]|$)""", RegexOption.IGNORE_CASE)
-        val subtitleUrl = Regex("""^https://[^?#]+/subs/[^/?#]+\.(?:vtt|srt)(?:[?#]|$)""", RegexOption.IGNORE_CASE)
         val qualityInFileName = Regex("""(?:^|[-_])(2160|1440|1080|720|576|540|480|360)p(?:[-_.]|$)""")
     }
 }
