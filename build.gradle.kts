@@ -12,6 +12,8 @@ buildscript {
     }
     dependencies {
         classpath("com.android.tools.build:gradle:8.7.3")
+        // Match the D8 version required for Kotlin 2.4 metadata.
+        classpath("com.android.tools:r8:9.1.31")
         classpath("com.github.recloudstream:gradle:-SNAPSHOT")
         classpath("org.jetbrains.kotlin:kotlin-gradle-plugin:2.4.0")
     }
