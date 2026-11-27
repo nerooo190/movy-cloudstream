@@ -1,0 +1,20 @@
+[
+  {
+    "fileHash": "sha256-8bab9bca234d0eed9ce61e45fda4662b015520a77e51cd2d35c572e0cfd5c6ff",
+    "apiVersion": 1,
+    "repositoryUrl": "https://github.com/nerooo190/movy-cloudstream",
+    "fileSize": 38865,
+    "status": 1,
+    "language": "de",
+    "authors": [],
+    "tvTypes": [
+      "Movie",
+      "TvSeries"
+    ],
+    "version": 3,
+    "internalName": "Movy",
+    "description": "Deutscher Movy-Katalog mit Filmen und Serien.",
+    "url": "https://cdn.jsdelivr.net/gh/nerooo190/movy-cloudstream@builds/Movy-8bab9bca234d0eed9ce61e45fda4662b015520a77e51cd2d35c572e0cfd5c6ff.cs3",
+    "name": "Movy"
+  }
+]
