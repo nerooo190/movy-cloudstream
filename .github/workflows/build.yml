@@ -33,20 +33,28 @@ jobs:
           python3 - <<'PY'
           import json
           import os
+          import shutil
           from pathlib import Path
 
           package = Path("package")
           base_url = f"https://cdn.jsdelivr.net/gh/{os.environ['GITHUB_REPOSITORY']}@builds"
           repository = json.loads((package / "repo.json").read_text())
-          plugins = json.loads((package / "plugins.json").read_text())
+          plugin, = json.loads((package / "plugins.json").read_text())
 
-          repository["pluginLists"] = [f"{base_url}/plugins-cdn.json"]
-          for plugin in plugins:
-              filename = plugin["url"].rsplit("/", 1)[-1]
-              plugin["url"] = f"{base_url}/{filename}"
+          version = plugin["version"]
+          digest = plugin["fileHash"].removeprefix("sha256-")
+          binary = f"Movy-{digest}.cs3"
+          shutil.copyfile(package / "Movy.cs3", package / binary)
+          plugin["url"] = f"{base_url}/{binary}"
+
+          plugin_list = f"plugins-v{version}-cdn.json"
+          repository["pluginLists"] = [f"{base_url}/{plugin_list}"]
+          for filename in ("plugins-cdn.json", plugin_list):
+              (package / filename).write_text(json.dumps([plugin], indent=2) + "\n")
 
           (package / "repo-cdn.json").write_text(json.dumps(repository, indent=2) + "\n")
-          (package / "plugins-cdn.json").write_text(json.dumps(plugins, indent=2) + "\n")
+          repository["name"] = f"{repository['name']} (v{version})"
+          (package / f"repo-v{version}-cdn.json").write_text(json.dumps(repository, indent=2) + "\n")
           PY
       - uses: actions/upload-artifact@v4
         with:
@@ -80,11 +88,8 @@ jobs:
             git -C "$target" switch --orphan builds
           fi
 
-          files=(Movy.cs3 plugins.json repo.json plugins-cdn.json repo-cdn.json)
-          for file in "${files[@]}"; do
-            cp "$RUNNER_TEMP/movy-package/$file" "$target/"
-          done
-          git -C "$target" add -- "${files[@]}"
+          cp "$RUNNER_TEMP"/movy-package/* "$target/"
+          git -C "$target" add --all
           if git -C "$target" diff --cached --quiet; then
             exit 0
           fi
