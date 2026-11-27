@@ -18,6 +18,12 @@ Kopiere `Movy.cs3` in den Ordner `Cloudstream3/plugins/` im gemeinsamen Android-
 
 Die Dateien im Branch `builds` müssen für Cloudstream per HTTP abrufbar sein. Bei einem öffentlichen GitHub-Repository ist die Raw-URL direkt verwendbar.
 
+Falls Cloudstream die GitHub-Raw-URL nicht laden kann, verwende den jsDelivr-Link. Bei diesem Link werden die Pluginliste und das Plugin ebenfalls über jsDelivr geladen.
+
+```text
+https://cdn.jsdelivr.net/gh/OWNER/REPO@builds/repo-cdn.json
+```
+
 ## Selbst bauen
 
 Voraussetzungen sind JDK 17 oder 21, Android SDK 35 und Build Tools 34.0.0. Setze `ANDROID_HOME` auf den Pfad zum Android SDK und führe Folgendes aus.

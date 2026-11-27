@@ -30,6 +30,24 @@ jobs:
           ./gradlew make makePluginsJson makeRepositoryJson
           mkdir -p package
           cp Movy/build/Movy.cs3 build/{plugins,repo}.json package/
+          python3 - <<'PY'
+          import json
+          import os
+          from pathlib import Path
+
+          package = Path("package")
+          base_url = f"https://cdn.jsdelivr.net/gh/{os.environ['GITHUB_REPOSITORY']}@builds"
+          repository = json.loads((package / "repo.json").read_text())
+          plugins = json.loads((package / "plugins.json").read_text())
+
+          repository["pluginLists"] = [f"{base_url}/plugins-cdn.json"]
+          for plugin in plugins:
+              filename = plugin["url"].rsplit("/", 1)[-1]
+              plugin["url"] = f"{base_url}/{filename}"
+
+          (package / "repo-cdn.json").write_text(json.dumps(repository, indent=2) + "\n")
+          (package / "plugins-cdn.json").write_text(json.dumps(plugins, indent=2) + "\n")
+          PY
       - uses: actions/upload-artifact@v4
         with:
           name: movy-cloudstream
@@ -62,8 +80,11 @@ jobs:
             git -C "$target" switch --orphan builds
           fi
 
-          cp "$RUNNER_TEMP"/movy-package/{Movy.cs3,plugins.json,repo.json} "$target/"
-          git -C "$target" add Movy.cs3 plugins.json repo.json
+          files=(Movy.cs3 plugins.json repo.json plugins-cdn.json repo-cdn.json)
+          for file in "${files[@]}"; do
+            cp "$RUNNER_TEMP/movy-package/$file" "$target/"
+          done
+          git -C "$target" add -- "${files[@]}"
           if git -C "$target" diff --cached --quiet; then
             exit 0
           fi
