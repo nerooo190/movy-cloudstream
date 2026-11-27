@@ -3,6 +3,6 @@
   "description": "Filme und Serien aus dem deutschen Movy-Katalog.",
   "manifestVersion": 1,
   "pluginLists": [
-    "https://cdn.jsdelivr.net/gh/nerooo190/movy-cloudstream@builds/plugins-cdn.json"
+    "https://cdn.jsdelivr.net/gh/nerooo190/movy-cloudstream@builds/plugins-v2-cdn.json"
   ]
 }
