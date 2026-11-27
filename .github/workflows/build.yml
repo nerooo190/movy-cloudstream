@@ -14,6 +14,26 @@ permissions:
   contents: read
 
 jobs:
+  server:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: "24"
+      - name: Schnittstellen testen
+        working-directory: server
+        run: |
+          npm ci
+          npm test
+      - name: Server-Container starten und Manifest prüfen
+        run: |
+          docker build -t movy-resolver ./server
+          docker run --detach --init --rm --name movy-resolver -p 127.0.0.1:17000:7000 movy-resolver
+          trap 'docker logs movy-resolver; docker rm -f movy-resolver' EXIT
+          curl --retry 10 --retry-connrefused --retry-delay 2 --fail --silent http://127.0.0.1:17000/health
+          curl --fail --silent http://127.0.0.1:17000/manifest.json | jq -e '.id == "de.movy.stremio"'
+
   build:
     runs-on: ubuntu-latest
     steps:

@@ -1,0 +1,14 @@
+services:
+  - type: web
+    name: movy-resolver
+    runtime: docker
+    plan: free
+    dockerContext: ./server
+    dockerfilePath: ./server/Dockerfile
+    healthCheckPath: /health
+    autoDeployTrigger: off
+    envVars:
+      - key: MOVY_ACCESS_TOKEN
+        generateValue: true
+      - key: MOVY_BROWSER_SESSIONS
+        value: "1"

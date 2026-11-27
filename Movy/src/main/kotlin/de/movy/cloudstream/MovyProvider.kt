@@ -37,7 +37,10 @@ import kotlinx.coroutines.coroutineScope
 import okhttp3.HttpUrl.Companion.toHttpUrlOrNull
 import java.io.IOException
 
-class MovyProvider internal constructor(private val playback: MovyPlayback) : MainAPI() {
+class MovyProvider internal constructor(
+    private val playback: MovyPlayback,
+    private val server: MovyServer,
+) : MainAPI() {
     override var mainUrl = "https://www.movy.sx"
     override var name = "Movy"
     override var lang = "de"
@@ -117,7 +120,8 @@ class MovyProvider internal constructor(private val playback: MovyPlayback) : Ma
     ): Boolean {
         val route = mediaRoute(data) ?: return false
         val path = route.value
-        val (stream, subtitles) = playback.resolve("$mainUrl/de$path?play=true")
+        val (stream, subtitles) = server.resolve(path)
+            ?: playback.resolve("$mainUrl/de$path?play=true")
             ?: playback.resolve("https://www.vidy.st$path?autoplay=true")
             ?: return false
 

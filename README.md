@@ -2,6 +2,35 @@
 
 Cloudstream-Erweiterung für den deutschen Katalog von [Movy](https://www.movy.sx/de) mit Startseite, Suche, Filmdetails und Staffeln samt Episoden. Die Erweiterung öffnet den Movy-Player in Android WebView und übergibt die gefundene HLS- oder DASH-Quelle an Cloudstream. Die verfügbaren Tonspuren hängen von der Quelle ab.
 
+## Cloudstream und Stremio über einen Server nutzen
+
+Der Server in `server/` bietet ein Stremio-Addon für die vorhandenen Film- und Serienkataloge. Cloudstream verwendet ab Movy v3 denselben Resolver, wenn du seine Adresse in den Plugin-Einstellungen einträgst.
+
+### Gehostete Einrichtung
+
+1. Öffne [Movy auf Render bereitstellen](https://render.com/deploy?repo=https%3A%2F%2Fgithub.com%2Fnerooo190%2Fmovy-cloudstream) und bestätige den Build in deinem Render-Konto. Das Blueprint verwendet den Free-Tarif.
+2. Öffne im Render-Dashboard den bereitgestellten Web Service und kopiere die HTTPS-Adresse aus **Overview**. Kopiere auch den Wert von `MOVY_ACCESS_TOKEN` aus **Environment**. Ersetze im Token `+` durch `-` und `/` durch `_`. Entferne `=` am Ende. Setze dann die URL für beide Apps zusammen.
+
+   ```text
+   https://DEIN-DIENST.onrender.com/DEIN-TOKEN/manifest.json
+   ```
+
+3. **Stremio.** Füge die Manifest-URL unter **Add-ons** ein und installiere **Movy**. Öffne anschließend einen Film oder eine Folge in der Stremio-Bibliothek.
+4. **Cloudstream.** Installiere **Movy v3**. Tippe in der Erweiterungsliste auf **Movy → Einstellungen**, füge dieselbe Manifest-URL ein und speichere.
+
+Die Manifest-URL enthält deinen Zugriffstoken. Der Free-Tarif pausiert den Server bei Inaktivität. Wenn ein Aufruf deshalb abbricht, öffne die Serveradresse im Browser, warte bis der Server erreichbar ist und starte den Titel erneut.
+
+### Selbst betreiben
+
+Bau und starte das Image aus diesem Repository.
+
+```sh
+docker build -t movy-resolver ./server
+docker run --init --rm -p 127.0.0.1:7000:7000 movy-resolver
+```
+
+Für Tests am selben Rechner lautet die Manifest-URL `http://127.0.0.1:7000/manifest.json`. Für Geräte außerhalb des Rechners nutze eine erreichbare HTTPS-Adresse und setze `MOVY_ACCESS_TOKEN`.
+
 ## Lokal in Cloudstream testen
 
 Kopiere `Movy.cs3` in den Ordner `Cloudstream3/plugins/` im gemeinsamen Android-Speicher. Erlaube Cloudstream den Zugriff auf diesen Speicher, falls Android danach fragt. Starte die App neu und wähle **Movy** als Quelle.
